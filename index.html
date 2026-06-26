@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        body { margin: 0; display: flex; height: 100vh; background: #0f0f0f; color: #fff; font-family: sans-serif; overflow: hidden; }
+        
+        #sidebar { width: 160px; background: #1e1e1e; padding: 20px; border-right: 1px solid #333; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
+        
+        button { padding: 10px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        
+        #mode-label { color: #aaa; font-size: 12px; margin-top: 5px; text-align: center; }
+        
+        #canvas-wrapper { flex: 1; position: relative; background: #fff; cursor: crosshair; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        
+        .item { position: absolute; z-index: 2; padding: 10px; border: 1px dashed #666; cursor: pointer; color: #000; background: rgba(255,255,255,0.9); user-select: none; -webkit-user-drag: none; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <button onclick="setMode('draw')">Draw</button>
+    <button onclick="setMode('drag')">Drag</button>
+    <button onclick="setMode('delete')">Delete</button>
+    <div id="mode-label">Tool: Draw</div>
+    <hr style="width:100%">
+    <button onclick="addText()">Add Text</button>
+    <input type="file" id="imgInput" style="display:none" onchange="uploadImg(event)">
+    <button onclick="document.getElementById('imgInput').click()">Add Image</button>
+    <button onclick="clearEverything()" style="background:#dc3545">Clear All</button>
+</div>
+
+<div id="canvas-wrapper">
+    <canvas id="whiteboard"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('whiteboard');
+    const ctx = canvas.getContext('2d');
+    const wrapper = document.getElementById('canvas-wrapper');
+    const modeLabel = document.getElementById('mode-label');
+    
+    canvas.width = wrapper.offsetWidth; 
+    canvas.height = wrapper.offsetHeight;
+    
+    let mode = 'draw';
+    let painting = false;
+
+    function setMode(m) { 
+        mode = m; 
+        modeLabel.innerText = "Tool: " + m.charAt(0).toUpperCase() + m.slice(1);
+    }
+
+    // --- Drawing Logic ---
+    canvas.onmousedown = (e) => { if(mode === 'draw' && e.button === 0) painting = true; };
+    canvas.onmouseup = () => { painting = false; ctx.beginPath(); };
+    canvas.onmousemove = (e) => {
+        if(!painting || mode !== 'draw') return;
+        const rect = canvas.getBoundingClientRect();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    };
+
+    // --- Object Spawning & Delete/Drag Handling ---
+    function spawnObject(el) {
+        el.className = 'item';
+        el.style.left = (wrapper.offsetWidth / 2 - 75) + 'px';
+        el.style.top = (wrapper.offsetHeight / 2 - 75) + 'px';
+        
+        el.onmousedown = (e) => {
+            if (mode === 'delete') { el.remove(); }
+            else if (mode === 'drag') { makeDraggable(el, e); }
+        };
+        wrapper.appendChild(el);
+    }
+
+    function addText() {
+        let div = document.createElement('div');
+        div.contentEditable = true;
+        div.innerText = 'New Text';
+        spawnObject(div);
+    }
+
+    function uploadImg(e) {
+        let reader = new FileReader();
+        reader.onload = (event) => {
+            let img = document.createElement('img');
+            img.src = event.target.result;
+            img.style.width = '150px';
+            spawnObject(img);
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    }
+
+    function clearEverything() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        document.querySelectorAll('.item').forEach(el => el.remove());
+    }
+
+    // --- Bulletproof Dragging ---
+    function makeDraggable(el, e) {
+        if (e.button !== 0) return;
+        let shiftX = e.clientX - el.getBoundingClientRect().left;
+        let shiftY = e.clientY - el.getBoundingClientRect().top;
+
+        function move(e) {
+            const rect = wrapper.getBoundingClientRect();
+            el.style.left = (e.clientX - rect.left - shiftX) + 'px';
+            el.style.top = (e.clientY - rect.top - shiftY) + 'px';
+        }
+
+        window.addEventListener('mousemove', move);
+        
+        const stopDragging = () => {
+            window.removeEventListener('mousemove', move);
+            window.removeEventListener('mouseup', stopDragging);
+        };
+        window.addEventListener('mouseup', stopDragging);
+    }
+</script>
+</body>
+</html>
