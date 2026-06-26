@@ -1,39 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Whiteboard - Nexus Tools</title>
     <style>
-        body { margin: 0; display: flex; height: 100vh; background: #0f0f0f; color: #fff; font-family: sans-serif; overflow: hidden; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body { 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            background: #0d1117; 
+            color: #c9d1d9; 
+            overflow: hidden; 
+        }
         
-        #sidebar { width: 160px; background: #1e1e1e; padding: 20px; border-right: 1px solid #333; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
+        /* Sleek Nexus Dark Sidebar */
+        #sidebar { 
+            width: 180px; 
+            background: #161b22; 
+            padding: 20px; 
+            border-right: 1px solid #30363d; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            z-index: 10; 
+            padding-top: 70px; /* Leave space for the back button */
+        }
         
-        button { padding: 10px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; }
-        button:hover { background: #0056b3; }
+        /* Modern Button Styling matching Main Menu */
+        button { 
+            padding: 10px; 
+            cursor: pointer; 
+            background: #21262d; 
+            color: #c9d1d9; 
+            border: 1px solid #30363d; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 0.85rem;
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+        }
+
+        /* Hover states with classic glowing blue theme accents */
+        button:hover { 
+            background: #30363d; 
+            border-color: #58a6ff;
+            color: #ffffff;
+        }
         
-        #mode-label { color: #aaa; font-size: 12px; margin-top: 5px; text-align: center; }
+        #mode-label { 
+            color: #8b949e; 
+            font-size: 12px; 
+            margin-top: 5px; 
+            text-align: center; 
+            font-weight: 500;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #30363d;
+            margin: 5px 0;
+        }
         
-        #canvas-wrapper { flex: 1; position: relative; background: #fff; cursor: crosshair; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        /* High-contrast canvas container */
+        #canvas-wrapper { 
+            flex: 1; 
+            position: relative; 
+            background: #ffffff; 
+            cursor: crosshair; 
+        }
+
+        canvas { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 1; 
+        }
         
-        .item { position: absolute; z-index: 2; padding: 10px; border: 1px dashed #666; cursor: pointer; color: #000; background: rgba(255,255,255,0.9); user-select: none; -webkit-user-drag: none; }
+        /* Styled drag-and-drop elements */
+        .item { 
+            position: absolute; 
+            z-index: 2; 
+            padding: 10px; 
+            border: 2px dashed #58a6ff; 
+            border-radius: 4px;
+            cursor: grab; 
+            color: #000000; 
+            background: rgba(255, 255, 255, 0.95); 
+            user-select: none; 
+            -webkit-user-drag: none; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .item:active {
+            cursor: grabbing;
+        }
+
+        /* Back to Home Button Link */
+        .back-link {
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 999; 
+            background: #21262d; 
+            color: #c9d1d9; 
+            padding: 8px 14px; 
+            text-decoration: none; 
+            border: 1px solid #30363d;
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 13px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25); 
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+        }
+
+        .back-link:hover {
+            background-color: #30363d;
+            border-color: #58a6ff;
+            color: #ffffff;
+        }
+
+        /* --- Screen Filling Transition Overlay (Matches Homepage Style) --- */
+        #transition-overlay {
+            display: none;
+            position: fixed;
+            background-color: #0d1117;
+            border: 1px solid #58a6ff;
+            border-radius: 6px;
+            z-index: 9999;
+            transition: all 0.45s cubic-bezier(0.7, 0, 0.3, 1);
+        }
+
+        #transition-overlay.active {
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0;
+            border-color: #0d1117;
+        }
     </style>
 </head>
 <body>
+
+<a href="https://cloutcatt.github.io/main-menu-for-nexus-tools/" class="back-link" id="back-btn">
+   &lt;- Back to Home
+</a>
 
 <div id="sidebar">
     <button onclick="setMode('draw')">Draw</button>
     <button onclick="setMode('drag')">Drag</button>
     <button onclick="setMode('delete')">Delete</button>
     <div id="mode-label">Tool: Draw</div>
-    <hr style="width:100%">
+    <hr>
     <button onclick="addText()">Add Text</button>
     <input type="file" id="imgInput" style="display:none" onchange="uploadImg(event)">
     <button onclick="document.getElementById('imgInput').click()">Add Image</button>
-    <button onclick="clearEverything()" style="background:#dc3545">Clear All</button>
+    <button onclick="clearEverything()" style="background: rgba(248, 81, 73, 0.15); color: #f85149; border-color: #f85149;">Clear All</button>
 </div>
 
 <div id="canvas-wrapper">
     <canvas id="whiteboard"></canvas>
 </div>
+
+<div id="transition-overlay"></div>
 
 <script>
     const canvas = document.getElementById('whiteboard');
@@ -52,13 +190,38 @@
         modeLabel.innerText = "Tool: " + m.charAt(0).toUpperCase() + m.slice(1);
     }
 
+    // --- Back Button Zoom Interceptor ---
+    document.getElementById('back-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetUrl = this.getAttribute('href');
+        const overlay = document.getElementById('transition-overlay');
+        const rect = this.getBoundingClientRect();
+
+        // Lock onto button's coordinate space
+        overlay.style.top = rect.top + 'px';
+        overlay.style.left = rect.left + 'px';
+        overlay.style.width = rect.width + 'px';
+        overlay.style.height = rect.height + 'px';
+        overlay.style.display = 'block';
+
+        // Expand to viewport size seamlessly
+        setTimeout(() => {
+            overlay.classList.add('active');
+        }, 10);
+
+        // Redirect after animation finishes
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 450);
+    });
+
     // --- Drawing Logic ---
     canvas.onmousedown = (e) => { if(mode === 'draw' && e.button === 0) painting = true; };
     canvas.onmouseup = () => { painting = false; ctx.beginPath(); };
     canvas.onmousemove = (e) => {
         if(!painting || mode !== 'draw') return;
         const rect = canvas.getBoundingClientRect();
-        ctx.strokeStyle = '#000';
+        ctx.strokeStyle = '#000000';
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
@@ -103,7 +266,7 @@
         document.querySelectorAll('.item').forEach(el => el.remove());
     }
 
-    // --- Bulletproof Dragging ---
+    // --- Dragging Engine ---
     function makeDraggable(el, e) {
         if (e.button !== 0) return;
         let shiftX = e.clientX - el.getBoundingClientRect().left;
